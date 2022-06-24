@@ -16,9 +16,9 @@ func dataSourceSodiumEncryptedItem() *schema.Resource {
 		Description: "Encrypt a string value with given public key using sodium library",
 
 		Schema: map[string]*schema.Schema{
-			"public_key": {
+			"public_key_base64": {
 				Type:        schema.TypeString,
-				Description: "Public key to use when encrypting",
+				Description: "Public key to use when encrypting base64 encoded",
 				Required:    true,
 				ForceNew:    true,
 			},
@@ -50,7 +50,11 @@ func dataSourceSodiumEncryptedItemRead(d *schema.ResourceData, m interface{}) er
 
 	// Getting public key from input
 	var pkBytes [32]byte
-	copy(pkBytes[:], []byte(d.Get("public_key").(string)))
+	key, err := base64.StdEncoding.DecodeString(d.Get("public_key_base64").(string))
+	if err != nil {
+		return fmt.Errorf("failed to decode base64 public_key_base64")
+	}
+	copy(pkBytes[:], key)
 
 	// Encrypting string with given pubKey
 	enc, err := box.SealAnonymous(nil, secretBytes, &pkBytes, nil)
